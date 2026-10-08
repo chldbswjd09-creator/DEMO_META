@@ -13,7 +13,7 @@ import { LoadingScreen, Spinner, EmptyState } from "@/components/ui/common";
 import { formatKRW, formatNumber, formatPct, formatDate, formatMetricValue } from "@/lib/metrics/format";
 import { naturalCompare } from "@/lib/natural";
 import { uniqueCampaigns, displayCampaign, campaignMatches } from "@/lib/materials/campaign";
-import { clearTabSession } from "@/lib/auth/tabSession";
+import { resetSampleData } from "@/lib/materials/store";
 import { cn } from "@/lib/cn";
 
 function bytes(n: number): string {
@@ -51,11 +51,12 @@ export function LibraryScreen() {
     openDetail, rename, updateMeta, remove, clearAll, backup, restore, error,
   } = useMaterials();
   const restoreRef = useRef<HTMLInputElement>(null);
-  const logout = async () => {
-    // 수동 로그아웃: 이 탭의 세션 마커 제거 + 서버 인증 쿠키 제거(데이터 불변) 후 로그인 이동.
-    clearTabSession();
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
-    window.location.href = "/login";
+  const resetDemo = () => {
+    // 데모: 샘플 데이터로 초기화(브라우저 로컬 저장소 재시드) 후 새로고침.
+    if (confirm("샘플 데이터로 초기화할까요? 현재 입력·수정 내용이 사라집니다.")) {
+      resetSampleData();
+      window.location.reload();
+    }
   };
   const [query, setQuery] = useState(""); // 입력창 값
   const [applied, setApplied] = useState(""); // 실제 적용된 검색어
@@ -108,6 +109,7 @@ export function LibraryScreen() {
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 px-5 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2">
           <Logo size={34} title="광고 성과 분석" subtitle="분석 자료" />
+          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">DEMO</span>
           <div className="ml-auto flex items-center gap-1.5 text-[11px]">
             {storage && <span className="mr-1 hidden text-slate-400 sm:inline">저장 사용량 {bytes(storage.usage)}{storage.quota ? ` / ${bytes(storage.quota)}` : ""}</span>}
             <button onClick={() => setColsOpen(true)} className="rounded-lg border border-brand/40 bg-brand/5 px-2.5 py-1.5 font-medium text-brand shadow-soft hover:bg-brand/10">열 설정</button>
@@ -115,7 +117,7 @@ export function LibraryScreen() {
             <button onClick={() => restoreRef.current?.click()} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-medium text-slate-600 shadow-soft hover:border-slate-300 hover:text-slate-800">백업 불러오기</button>
             <input ref={restoreRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onRestore(e.target.files[0]); e.target.value = ""; }} />
             <button onClick={() => { if (materials.length && confirm("모든 분석 자료를 삭제합니다. 되돌릴 수 없습니다.")) clearAll(); }} className="rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 font-medium text-rose-600 shadow-soft hover:bg-rose-50">전체 삭제</button>
-            <button onClick={logout} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-medium text-slate-500 shadow-soft hover:border-slate-300 hover:text-slate-700">로그아웃</button>
+            <button onClick={resetDemo} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-medium text-slate-500 shadow-soft hover:border-slate-300 hover:text-slate-700">샘플 초기화</button>
           </div>
         </div>
       </header>
@@ -123,9 +125,10 @@ export function LibraryScreen() {
       <MetaColumnsPanel open={colsOpen} onClose={() => setColsOpen(false)} />
 
       <main className="mx-auto max-w-6xl px-5 py-5">
-        <p className="mb-3 text-[11px] leading-relaxed text-slate-400">
-          분석 자료는 공용 저장소에 저장되어 다른 기기·브라우저에서도 동일하게 확인할 수 있습니다.
-        </p>
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800">
+          📊 <span className="font-semibold">포트폴리오 데모 — 샘플 데이터입니다 (실제 업무 데이터가 아닙니다).</span>{" "}
+          입력·수정 내용은 이 브라우저에만 저장되며 다른 사용자와 공유되지 않습니다. 우측 상단 <span className="font-medium">‘샘플 초기화’</span>로 언제든 되돌릴 수 있습니다.
+        </div>
 
         <UploadZone />
         {error && <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div>}
