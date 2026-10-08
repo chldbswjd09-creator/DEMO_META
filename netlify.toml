@@ -1,0 +1,10 @@
+# Netlify + Next.js (App Router). API 라우트는 Netlify Functions로 실행된다.
+[build]
+  command = "next build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Next.js 런타임 (API 라우트/SSR 지원). Netlify가 자동 설치하지만 명시해 둔다.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
